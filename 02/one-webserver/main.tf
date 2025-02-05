@@ -10,8 +10,19 @@ provider "aws" {
 # -------------------------------#
 
 # 1) SG
+variable "security_group_name" {
+  description = "The name of the security group"
+  type = string
+  default = "allow_80"
+}
+
+output "public_ip" {
+  value = aws_instance.example.public_ip
+  description = "The public IP of the Instance"
+}
+
 resource "aws_security_group" "allow_80" {
-  name        = "allow_80"
+  name        = var.security_group_name
   description = "Allow 80 inbound traffic and all outbound traffic"
   tags = {
     Name = "my_allow_80"
