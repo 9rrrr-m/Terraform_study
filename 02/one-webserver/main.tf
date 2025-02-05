@@ -10,17 +10,6 @@ provider "aws" {
 # -------------------------------#
 
 # 1) SG
-variable "security_group_name" {
-  description = "The name of the security group"
-  type = string
-  default = "allow_80"
-}
-
-output "public_ip" {
-  value = aws_instance.example.public_ip
-  description = "The public IP of the Instance"
-}
-
 resource "aws_security_group" "allow_80" {
   name        = var.security_group_name
   description = "Allow 80 inbound traffic and all outbound traffic"
@@ -33,9 +22,9 @@ resource "aws_security_group" "allow_80" {
 resource "aws_vpc_security_group_ingress_rule" "allow_http_80" {
   security_group_id = aws_security_group.allow_80.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 80
+  from_port         = var.server_port
   ip_protocol       = "tcp"
-  to_port           = 80
+  to_port           = var.server_port
 }
 
 ## SG egress rule
