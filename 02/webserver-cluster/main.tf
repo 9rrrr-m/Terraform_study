@@ -165,11 +165,11 @@ data "aws_ami" "amazon_linux_2023" {
 }
 
 ### Resource: aws_launch_template
-resource "aws_launch_configuration" "myLT" {
+resource "aws_launch_template" "myLT" {
   image_id = data.aws_ami.amazon_linux_2023.id
   instance_type = "t2.micro"
   key_name = "mykeypair"
-  security_groups = [aws_security_group.myASG_SG.id]
+  vpc_security_group_ids = [aws_security_group.myASG_SG.id]
   user_data = filebase64("user_data.sh")
 }
 
@@ -180,8 +180,16 @@ resource "aws_autoscaling_group" "bar" {
   max_size                  = 2
   min_size                  = 2
   health_check_type         = "ELB"
-  launch_configuration = aws_launch_configuration.myLT.name
   vpc_zone_identifier       = data.aws_subnets.default.ids
+  
+  # 아래 내용은 aws_lb_target_group을 설정한 후 반드시 등록 해 주어야 함.
+  target_group_arns = [ aws_lb_target_group.myALB_TG.arn ]
+  depends_on = [ aws_lb_target_group.myALB_TG ]  # 생략 가능
+
+  launch_template {
+    id      = aws_launch_template.myLT.id
+    version = 1
+  }
 
   tag {
     key                 = "Name"
