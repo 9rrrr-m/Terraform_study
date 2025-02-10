@@ -37,18 +37,15 @@ resource "aws_security_group" "myALB_SG" {
   name        = "myALB_SG"
   description = "Allow 80/tcp inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
-
-  tags = {
-    Name = "myALB_SG"
-  }
+  tags = var.myALB_SG_tag
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_tls_ipv4" {
   security_group_id = aws_security_group.myALB_SG.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 80
+  from_port         = var.web_port
   ip_protocol       = "tcp"
-  to_port           = 80
+  to_port           = var.web_port
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
@@ -61,7 +58,7 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
 ### Resource: aws_lb_target_group
 resource "aws_lb_target_group" "myALB_TG" {
   name     = "myALB-TG"
-  port     = 80
+  port     = var.web_port
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
 }
@@ -80,7 +77,7 @@ resource "aws_lb" "myALB" {
 ### Resource: aws_lb_listener
 resource "aws_lb_listener" "myALB_listener" {
   load_balancer_arn = aws_lb.myALB.arn
-  port              = "80"
+  port              = "${var.web_port}"
   protocol          = "HTTP"
   
   default_action {
@@ -123,17 +120,17 @@ resource "aws_security_group" "myASG_SG" {
 resource "aws_vpc_security_group_ingress_rule" "allow_80" {
   security_group_id = aws_security_group.myASG_SG.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 80
+  from_port         = var.web_port
   ip_protocol       = "tcp"
-  to_port           = 80
+  to_port           = var.web_port
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_22_myASG" {
   security_group_id = aws_security_group.myASG_SG.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 22
+  from_port         = var.ssh_port
   ip_protocol       = "tcp"
-  to_port           = 22
+  to_port           = var.ssh_port
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic" {
@@ -177,8 +174,8 @@ resource "aws_launch_template" "myLT" {
 ### Resource: aws_autoscaling_group
 resource "aws_autoscaling_group" "bar" {
   name                      = "myASG"
-  max_size                  = 2
-  min_size                  = 2
+  max_size                  = var.asg_max_size
+  min_size                  = var.asg_min_size
   health_check_type         = "ELB"
   vpc_zone_identifier       = data.aws_subnets.default.ids
   
@@ -188,7 +185,7 @@ resource "aws_autoscaling_group" "bar" {
 
   launch_template {
     id      = aws_launch_template.myLT.id
-    version = 1
+    version = var.lt_version
   }
 
   tag {
